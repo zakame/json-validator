@@ -13,7 +13,7 @@ use Mojo::JSON;
 use Mojo::Loader;
 use Mojo::URL;
 use Mojo::Util qw(url_unescape sha1_sum);
-use Scalar::Util qw(blessed refaddr);
+use Scalar::Util qw(blessed refaddr looks_like_number);
 use Time::Local ();
 
 use constant CASE_TOLERANT     => File::Spec->case_tolerant;
@@ -26,7 +26,7 @@ use constant VALIDATE_HOSTNAME => eval 'require Data::Validate::Domain;1';
 use constant VALIDATE_IP       => eval 'require Data::Validate::IP;1';
 
 our $ERR;    # ugly hack to improve validation errors
-our $VERSION   = '2.18';
+our $VERSION   = '2.18_01';
 our @EXPORT_OK = qw(joi validate_json);
 
 my $BUNDLED_CACHE_DIR = path(path(__FILE__)->dirname, qw(Validator cache));
@@ -757,7 +757,7 @@ sub _validate_type_number {
     and $value * 0 == 0)
   {
     return E $path, "Expected $expected - got string."
-      if !$self->{coerce}{numbers} or $value !~ /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
+      if !$self->{coerce}{numbers} or !looks_like_number($value);
     $_[1] = 0 + $value;    # coerce input value
   }
 
