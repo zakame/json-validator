@@ -13,7 +13,7 @@ use Mojo::JSON;
 use Mojo::Loader;
 use Mojo::URL;
 use Mojo::Util qw(url_unescape sha1_sum);
-use Scalar::Util qw(blessed refaddr);
+use Scalar::Util qw(blessed refaddr looks_like_number);
 use Time::Local ();
 
 use constant CASE_TOLERANT     => File::Spec->case_tolerant;
@@ -26,7 +26,7 @@ use constant VALIDATE_HOSTNAME => eval 'require Data::Validate::Domain;1';
 use constant VALIDATE_IP       => eval 'require Data::Validate::IP;1';
 
 our $ERR;    # ugly hack to improve validation errors
-our $VERSION   = '2.18';
+our $VERSION   = '2.18_02';
 our @EXPORT_OK = qw(joi validate_json);
 
 my $BUNDLED_CACHE_DIR = path(path(__FILE__)->dirname, qw(Validator cache));
@@ -146,6 +146,7 @@ sub _get {
     $p =~ s!~1!/!g;
     $p =~ s/~0/~/g;
     $pos = _path($pos, $p) if $cb;
+    warn ('path'. _path('', $p));
 
     if (ref $data eq 'HASH' and exists $data->{$p}) {
       $data = $data->{$p};
@@ -194,7 +195,6 @@ sub validate {
   my ($self, $data, $schema) = @_;
   $schema ||= $self->schema->data;
   return E '/', 'No validation rules defined.' unless $schema and %$schema;
-
   local $self->{grouped} = 0;
   local $self->{schema}  = Mojo::JSON::Pointer->new($schema);
   local $self->{seen}    = {};
@@ -479,11 +479,12 @@ sub _stack {
 sub _validate {
   my ($self, $data, $path, $schema) = @_;
   my ($seen_addr, $type, @errors);
-
   $schema = $self->_ref_to_schema($schema) if $schema->{'$ref'};
+  #Store the current data object so that later if we need to coerce the value
+  #we can update the value by reference. Binary.com specific
+  $self->{current_object} = $data if ($schema->{type} and $schema->{type} eq 'object');
   $seen_addr = refaddr $schema;
   $seen_addr .= ':' . (ref $data ? refaddr $data : "s:$data") if defined $data;
-
   # Avoid recursion
   if ($self->{seen}{$seen_addr}) {
     $self->_report_schema($path || '/', 'seen', $schema) if REPORT;
@@ -721,6 +722,10 @@ sub _validate_type_boolean {
     (B::svref_2object(\$value)->FLAGS & (B::SVp_IOK | B::SVp_NOK) or $value =~ /^(true|false)$/))
   {
     $_[1] = $value ? Mojo::JSON->true : Mojo::JSON->false;
+    
+    #Alter the original value by reference, Binary.com specific functionality
+    my @key = keys($self->{current_object}->%*) ;
+    $self->{current_object}->{$key[0]} =$_[1];
     return;
   }
 
@@ -757,9 +762,12 @@ sub _validate_type_number {
     and $value * 0 == 0)
   {
     return E $path, "Expected $expected - got string."
-      if !$self->{coerce}{numbers} or $value !~ /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
-    $_[1] = 0 + $value;    # coerce input value
-  }
+      if !$self->{coerce}{numbers} or !looks_like_number($value); #accept anything that looks like a value Binary.com Specific
+
+   #Alter the original value by reference, Binary.com specific functionality
+   my @key = keys($self->{current_object}->%*);
+    $self->{current_object}->{$key[0]} = 0 + $value;
+  } 
 
   if ($schema->{format}) {
     push @errors, $self->_validate_format($value, $path, $schema);
@@ -849,6 +857,9 @@ sub _validate_type_string {
   {
     return E $path, "Expected string - got number." unless $self->{coerce}{strings};
     $_[1] = "$value";    # coerce input value
+    #Alter the original value by reference, Binary.com specific functionality
+    my @key = keys($self->{current_object}->%*);
+    $self->{current_object}->{$key[0]} =  $_[1]; 
   }
   if ($schema->{format}) {
     push @errors, $self->_validate_format($value, $path, $schema);

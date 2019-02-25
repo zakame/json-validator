@@ -1,5 +1,8 @@
 Revision history for perl distribution JSON-Validator
 
+2.18_1 2019-02-04
+ - Relax the rules around what is a number for coercion. 
+
 2.18 2018-11-15T16:04:18+0900
  - Add EXPERIMETNAL support for data:// without a package
 
