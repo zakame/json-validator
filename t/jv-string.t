@@ -2,6 +2,7 @@ use lib '.';
 use t::Helper;
 use Test::More;
 use utf8;
+use Data::Dumper;
 
 my $schema = {
   type       => 'object',
@@ -21,5 +22,13 @@ validate_ok {nick => 'Déjà vu'}, $schema;
 
 t::Helper->validator->coerce(1);
 validate_ok {nick => 1000}, $schema;
-
+# testing that the original value is altered after validation
+# this is a Binary.com specific operation. 
+my $string_to_coerce = {nick => 123};
+validate_ok $string_to_coerce, $schema;
+# In pure Perl it is difficult/impossible to test for a string versus a string containing a number
+# Data::Dumper uses c code for its operation so it can tell the difference. 
+my $result =  Dumper($string_to_coerce);
+my $expected = Dumper({nick =>'123'});
+cmp_ok($result, 'eq', $expected, 'Original value was coerced'); 
 done_testing;
