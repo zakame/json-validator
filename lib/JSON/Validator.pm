@@ -724,8 +724,7 @@ sub _validate_type_boolean {
     $_[1] = $value ? Mojo::JSON->true : Mojo::JSON->false;
     
     #Alter the original value by reference, Binary.com specific functionality
-    my @key = keys($self->{current_object}->%*) ;
-    $self->{current_object}->{$key[0]} =$_[1];
+    $self->{current_object}->{$self->{current_key}} =$_[1];
     return;
   }
 
@@ -765,8 +764,7 @@ sub _validate_type_number {
       if !$self->{coerce}{numbers} or !looks_like_number($value); #accept anything that looks like a value Binary.com Specific
 
    #Alter the original value by reference, Binary.com specific functionality
-   my @key = keys($self->{current_object}->%*);
-    $self->{current_object}->{$key[0]} = 0 + $value;
+    $self->{current_object}->{$self->{current_key}} = 0 + $value;
   } 
 
   if ($schema->{format}) {
@@ -832,6 +830,7 @@ sub _validate_type_object {
   for my $k (sort keys %rules) {
     for my $r (@{$rules{$k}}) {
       next unless exists $data->{$k};
+      $self->{current_key} = $k;
       my @e = $self->_validate($data->{$k}, _path($path, $k), $r);
       push @errors, @e;
       push @errors, $self->_validate_type_enum($data->{$k}, _path($path, $k), $r)
@@ -858,8 +857,7 @@ sub _validate_type_string {
     return E $path, "Expected string - got number." unless $self->{coerce}{strings};
     $_[1] = "$value";    # coerce input value
     #Alter the original value by reference, Binary.com specific functionality
-    my @key = keys($self->{current_object}->%*);
-    $self->{current_object}->{$key[0]} =  $_[1]; 
+    $self->{current_object}->{$self->{current_key}} =  $_[1]; 
   }
   if ($schema->{format}) {
     push @errors, $self->_validate_format($value, $path, $schema);
