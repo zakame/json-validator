@@ -753,6 +753,9 @@ sub _validate_type_number {
 
   $expected ||= 'number';
 
+  use Data::Dumper;
+  warn Dumper($self->{current_object}) ;#if $self->{current_key} eq 'turnover_limit';
+   #Alter the original value by reference, Binary.com specific functionality
   if (!defined $value or ref $value) {
     return E $path, _expected($expected => $value);
   }
@@ -762,8 +765,7 @@ sub _validate_type_number {
   {
     return E $path, "Expected $expected - got string."
       if !$self->{coerce}{numbers} or !looks_like_number($value); #accept anything that looks like a value Binary.com Specific
-
-   #Alter the original value by reference, Binary.com specific functionality
+  warn ("coerced ".$self->{current_key});
     $self->{current_object}->{$self->{current_key}} = 0 + $value;
   } 
 
