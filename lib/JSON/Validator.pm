@@ -147,45 +147,6 @@ sub get {
   $self->_get($self->schema->data, $pointer, '');
 }
 
-<<<<<<< HEAD
-sub _get {
-  my ($self, $data, $path, $pos, $cb) = @_;
-  my $tied;
-
-  while (@$path) {
-    my $p = shift @$path;
-
-    unless (defined $p) {
-      my $i = 0;
-      return Mojo::Collection->new(map { $self->_get($_->[0], [@$path], _path($pos, $_->[1]), $cb) }
-          ref $data eq 'ARRAY' ? map { [$_, $i++] }
-          @$data : ref $data eq 'HASH' ? map { [$data->{$_}, $_] } sort keys %$data : [$data, '']);
-    }
-
-    $p =~ s!~1!/!g;
-    $p =~ s/~0/~/g;
-    $pos = _path($pos, $p) if $cb;
-    warn ('path'. _path('', $p));
-
-    if (ref $data eq 'HASH' and exists $data->{$p}) {
-      $data = $data->{$p};
-    }
-    elsif (ref $data eq 'ARRAY' and $p =~ /^\d+$/ and @$data > $p) {
-      $data = $data->[$p];
-    }
-    else {
-      return undef;
-    }
-
-    $data = $tied->schema if ref $data eq 'HASH' and $tied = tied %$data;
-  }
-
-  return $cb->($data, $pos) if $cb;
-  return $data;
-}
-
-=======
->>>>>>> ori/master
 sub joi {
   return JSON::Validator::Joi->new unless @_;
   my ($data, $joi) = @_;
@@ -567,17 +528,15 @@ sub _stack {
 
 sub _validate {
   my ($self, $data, $path, $schema) = @_;
-<<<<<<< HEAD
-  my ($seen_addr, $type, @errors);
-  $schema = $self->_ref_to_schema($schema) if $schema->{'$ref'};
-  #Store the current data object so that later if we need to coerce the value
-  #we can update the value by reference. Binary.com specific
-  $self->{current_object} = $data if ($schema->{type} and $schema->{type} eq 'object');
-  $seen_addr = refaddr $schema;
-  $seen_addr .= ':' . (ref $data ? refaddr $data : "s:$data") if defined $data;
-=======
   my ($seen_addr, $to_json, $type);
 
+  
+  if ($schema->{type} and $schema->{type} eq 'object'){
+      $self->{current_object} = $data 
+  }
+  else {
+      $self->{current_data} = $data; 
+  }
   # Do not validate against "default" in draft-07 schema
   return if blessed $schema and $schema->isa('JSON::PP::Boolean');
 
@@ -585,7 +544,6 @@ sub _validate {
   $seen_addr = join ':', refaddr($schema),
     (ref $data ? refaddr $data : ++$self->{seen}{scalar});
 
->>>>>>> ori/master
   # Avoid recursion
   if ($self->{seen}{$seen_addr}) {
     $self->_report_schema($path || '/', 'seen', $schema) if REPORT;
@@ -873,7 +831,8 @@ sub _validate_type_number {
   $expected ||= 'number';
 
   use Data::Dumper;
-  warn Dumper($self->{current_object}) ;#if $self->{current_key} eq 'turnover_limit';
+    warn $path. ' ' .Dumper($self->{current_object}) ;#if $self->{current_key} eq 'turnover_limit';
+    warn $path. ' ' .Dumper($self->{current_data}) ;#if $self->{current_key} eq 'turnover_limit';
    #Alter the original value by reference, Binary.com specific functionality
   if (!defined $value or ref $value) {
     return E $path, _expected($expected => $value);
@@ -881,8 +840,10 @@ sub _validate_type_number {
   unless (_is_number($value)) {
     return E $path, "Expected $expected - got string."
       if !$self->{coerce}{numbers} or !looks_like_number($value); #accept anything that looks like a value Binary.com Specific
-  warn ("coerced ".$self->{current_key});
-    $self->{current_object}->{$self->{current_key}} = 0 + $value;
+      warn ("$path coerced ".$self->{current_key});
+      $value = 0 + $value;
+    $self->{current_object}->{$self->{current_key}} = $value;
+    #$self->{current_data} ='asd';# 0 + $value;
   } 
 
   if ($schema->{format}) {
