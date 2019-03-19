@@ -529,10 +529,13 @@ sub _stack {
 sub _validate {
   my ($self, $data, $path, $schema) = @_;
   my ($seen_addr, $to_json, $type);
-
+ my $parent_object = {};
   
   if ($schema->{type} and $schema->{type} eq 'object'){
-      $self->{current_object} = $data 
+      use Data::Dumper;
+      #warn 'schema '. Dumper($schema) ."\n". Dumper($data);
+      #$self->{current_object} = $data ;# if ref($data) eq 'HASH';
+      
   }
   else {
       $self->{current_data} = $data; 
@@ -555,7 +558,7 @@ sub _validate {
     = (blessed $data and $data->can('TO_JSON')) ? \$data->TO_JSON : undef;
   $data = $$to_json if $to_json;
   $type = $schema->{type} || _guess_schema_type($schema, $data);
-
+ warn "type ".$type;
   # Test base schema before allOf, anyOf or oneOf
   if (ref $type eq 'ARRAY') {
     push @{$self->{temp_schema}}, [map { +{%$schema, type => $_} } @$type];
@@ -762,9 +765,12 @@ sub _validate_type_array {
     }
 
     if (@rules == @$data) {
+        $self->{current_array} = [];
       for my $i (0 .. @rules - 1) {
+          warn "count". $i;
         push @errors, $self->_validate($data->[$i], "$path/$i", $rules[$i]);
       }
+      #$self->{current_object}->{$self->{current_key}} = $self->{current_array};
     }
     elsif (!$additional_items) {
       push @errors, E $path, sprintf "Invalid number of items: %s/%s.",
@@ -829,10 +835,9 @@ sub _validate_type_number {
   my @errors;
 
   $expected ||= 'number';
-
   use Data::Dumper;
-    warn $path. ' ' .Dumper($self->{current_object}) ;#if $self->{current_key} eq 'turnover_limit';
-    warn $path. ' ' .Dumper($self->{current_data}) ;#if $self->{current_key} eq 'turnover_limit';
+  warn 'key '.$self->{current_key};
+  warn $path. ' ' .Dumper($self->{current_object}) if $self->{current_key} eq 'times';
    #Alter the original value by reference, Binary.com specific functionality
   if (!defined $value or ref $value) {
     return E $path, _expected($expected => $value);
@@ -840,12 +845,18 @@ sub _validate_type_number {
   unless (_is_number($value)) {
     return E $path, "Expected $expected - got string."
       if !$self->{coerce}{numbers} or !looks_like_number($value); #accept anything that looks like a value Binary.com Specific
-      warn ("$path coerced ".$self->{current_key});
+      #warn ("$path coerced ".$self->{current_key});
       $value = 0 + $value;
-    $self->{current_object}->{$self->{current_key}} = $value;
+      warn "REF ". Dumper  $self->{current_array}if $self->{current_key} eq 'times';
+      $self->{current_object}->{$self->{current_key}} = $value if !ref($self->{current_object}->{$self->{current_key}});
+      if (ref ($self->{current_object}->{$self->{current_key}}) eq 'ARRAY'){
+          warn " working on array ";
+          # my @array = $self->{current_array}->@*;
+          #        push (@array, $value);
+          #        $self->{current_array} = \@array;
+              }
     #$self->{current_data} ='asd';# 0 + $value;
   } 
-
   if ($schema->{format}) {
     push @errors, $self->_validate_format($value, $path, $schema);
   }
@@ -857,7 +868,7 @@ sub _validate_type_number {
   if (my $e
     = _cmp($value, $schema->{maximum}, $schema->{exclusiveMaximum}, '>'))
   {
-    push @errors, E $path, "$value $e maximum($schema->{maximum})";
+      push @errors, E $path, "$value $e maximum($schema->{maximum})";
   }
   if (my $d = $schema->{multipleOf}) {
     if (($value / $d) =~ /\.[^0]+$/) {
@@ -930,6 +941,7 @@ sub _validate_type_object {
     for my $r (@{$rules{$k}}) {
       next unless exists $data->{$k};
       $self->{current_key} = $k;
+      $self->{current_object} = $data;
       my @e = $self->_validate($data->{$k}, _path($path, $k), $r);
       push @errors, @e;
       next if @e or !UNIVERSAL::isa($r, 'HASH');
@@ -960,7 +972,7 @@ sub _validate_type_string {
       unless $self->{coerce}{strings};
     $_[1] = "$value";    # coerce input value
     #Alter the original value by reference, Binary.com specific functionality
-    $self->{current_object}->{$self->{current_key}} =  $_[1]; 
+    # $self->{current_object}->{$self->{current_key}} =  $_[1]; 
   }
   if ($schema->{format}) {
     push @errors, $self->_validate_format($value, $path, $schema);
