@@ -176,6 +176,7 @@ sub singleton { state $validator = shift->new }
 
 sub validate {
   my ($self, $data, $schema) = @_;
+$self->{current_object} = $data;
   $schema ||= $self->schema->data;
   return E '/', 'No validation rules defined.' unless $schema and %$schema;
   local $self->{grouped} = 0;
@@ -558,7 +559,6 @@ sub _validate {
     = (blessed $data and $data->can('TO_JSON')) ? \$data->TO_JSON : undef;
   $data = $$to_json if $to_json;
   $type = $schema->{type} || _guess_schema_type($schema, $data);
- warn "type ".$type;
   # Test base schema before allOf, anyOf or oneOf
   if (ref $type eq 'ARRAY') {
     push @{$self->{temp_schema}}, [map { +{%$schema, type => $_} } @$type];
@@ -757,6 +757,8 @@ sub _validate_type_array {
     push @errors, map {@$_} @e if @e >= @$data;
   }
   elsif (ref $schema->{items} eq 'ARRAY') {
+
+      warn "here";
     my $additional_items = $schema->{additionalItems} // {type => 'any'};
     my @rules            = @{$schema->{items}};
 
@@ -767,10 +769,10 @@ sub _validate_type_array {
     if (@rules == @$data) {
         $self->{current_array} = [];
       for my $i (0 .. @rules - 1) {
-          warn "count". $i;
+          warn ('772');
         push @errors, $self->_validate($data->[$i], "$path/$i", $rules[$i]);
       }
-      #$self->{current_object}->{$self->{current_key}} = $self->{current_array};
+      $self->{current_object}= $self->{current_array};
     }
     elsif (!$additional_items) {
       push @errors, E $path, sprintf "Invalid number of items: %s/%s.",
@@ -779,8 +781,12 @@ sub _validate_type_array {
   }
   elsif (UNIVERSAL::isa($schema->{items}, 'HASH')) {
     for my $i (0 .. @$data - 1) {
+        warn(785);
       push @errors, $self->_validate($data->[$i], "$path/$i", $schema->{items});
     }
+     use Data::Dumper;
+     warn 'current array '.Dumper($self->{current_array});
+      $self->{current_object}= $self->{current_array};
   }
 
   return @errors;
@@ -836,8 +842,8 @@ sub _validate_type_number {
 
   $expected ||= 'number';
   use Data::Dumper;
-  warn 'key '.$self->{current_key};
-  warn $path. ' ' .Dumper($self->{current_object}) if $self->{current_key} eq 'times';
+  #warn 'key '.$self->{current_key};
+  #warn $path. ' ' .Dumper($self->{current_object}) if $self->{current_key} eq 'times';
    #Alter the original value by reference, Binary.com specific functionality
   if (!defined $value or ref $value) {
     return E $path, _expected($expected => $value);
@@ -847,14 +853,18 @@ sub _validate_type_number {
       if !$self->{coerce}{numbers} or !looks_like_number($value); #accept anything that looks like a value Binary.com Specific
       #warn ("$path coerced ".$self->{current_key});
       $value = 0 + $value;
-      warn "REF ". Dumper  $self->{current_array}if $self->{current_key} eq 'times';
-      $self->{current_object}->{$self->{current_key}} = $value if !ref($self->{current_object}->{$self->{current_key}});
-      if (ref ($self->{current_object}->{$self->{current_key}}) eq 'ARRAY'){
-          warn " working on array ";
-          # my @array = $self->{current_array}->@*;
-          #        push (@array, $value);
-          #        $self->{current_array} = \@array;
-              }
+          warn "REF " if $self->{current_key} eq 'times';
+      $self->{current_object}->{$self->{current_key}} = $value if defined $self->{current_key} && !ref($self->{current_object}->{$self->{current_key}});
+use Data::Dumper;
+warn Dumper($self->{current_object});
+      if (ref ($self->{current_object}) eq 'ARRAY'){
+      warn " working on array ";
+      
+  
+           my $array = $self->{current_array} //[];
+                  push (@$array, $value +0);
+                  $self->{current_array} = $array;
+                  }
     #$self->{current_data} ='asd';# 0 + $value;
   } 
   if ($schema->{format}) {

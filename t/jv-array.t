@@ -47,12 +47,12 @@ $jv->schema({type => 'array', items => {type => 'number'}});
 @numbers = qw(1.42 2.3 1.42 1.42);
 ok !$jv->validate(\@numbers), 'numbers are valid';
 is encode_json(\@numbers), encode_json([1.42, 2.3, 1.42, 1.42]),
-  'coerced into integers';
+  'coerced into numbers';
 
 $jv->schema({type => 'array', items => {type => 'integer'}});
 @numbers = qw(1 2 1 1 3 1);
 ok !$jv->validate(\@numbers), 'integers are valid';
 is encode_json(\@numbers), encode_json([1, 2, 1, 1, 3, 1]),
-  'coerced into numbers';
+  'coerced into integers';
 
 done_testing;
