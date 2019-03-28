@@ -14,7 +14,7 @@ use Mojo::JSON;
 use Mojo::Loader;
 use Mojo::URL;
 use Mojo::Util qw(url_unescape sha1_sum);
-use Scalar::Util qw(blessed refaddr);
+use Scalar::Util qw(blessed refaddr looks_like_number);
 use Time::Local ();
 
 use constant CASE_TOLERANT     => File::Spec->case_tolerant;
@@ -827,7 +827,7 @@ sub _validate_type_number {
   unless (_is_number($value)) {
     return E $path, "Expected $expected - got string."
       if !$self->{coerce}{numbers}
-      or $value !~ /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
+      or !looks_like_number ($value) ;
     $_[1] = 0 + $value;    # coerce input value
   }
 
