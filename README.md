@@ -1,4 +1,4 @@
-
+1
 # JSON::Validator [![Build Status](https://api.travis-ci.org/mojolicious/json-validator.svg?branch=master)](https://travis-ci.org/mojolicious/json-validator)
 
   A module for validating data against a [JSON Schema](https://json-schema.org/).
