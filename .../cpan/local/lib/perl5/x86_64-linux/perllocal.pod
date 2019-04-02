@@ -1,0 +1,110 @@
+=head2 Mon Apr  1 01:49:04 2019: C<Module> L<JSON::Validator|JSON::Validator>
+
+=over 4
+
+=item *
+
+C<installed into: /home/git/regentmarkets/json-validator/.../cpan/local/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 3.06>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Mon Apr  1 01:53:26 2019: C<Module> L<JSON::Validator|JSON::Validator>
+
+=over 4
+
+=item *
+
+C<installed into: /home/git/regentmarkets/json-validator/.../cpan/local/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 3.06_A>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Mon Apr  1 01:55:36 2019: C<Module> L<JSON::Validator|JSON::Validator>
+
+=over 4
+
+=item *
+
+C<installed into: /home/git/regentmarkets/json-validator/.../cpan/local/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 3.06_01>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Mon Apr  1 01:59:21 2019: C<Module> L<JSON::Validator|JSON::Validator>
+
+=over 4
+
+=item *
+
+C<installed into: /home/git/regentmarkets/json-validator/.../cpan/local/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 3.06_01>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Mon Apr  1 02:21:03 2019: C<Module> L<JSON::Validator|JSON::Validator>
+
+=over 4
+
+=item *
+
+C<installed into: /home/git/regentmarkets/json-validator/.../cpan/local/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 3.06_01>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
